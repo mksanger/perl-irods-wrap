@@ -518,13 +518,12 @@ sub pf_overwrite_no_checksum {
   my $local_path = "$data_path/publish_file/a.txt";
   my $remote_path = "$coll_path/pf_no_remote_md5";
 
-  $publisher->publish_file($local_path, $remote_path) or fail;
+  $publisher->irods->add_object($local_path, $remote_path,
+                                $WTSI::NPG::iRODS::SKIP_CHECKSUM) or fail;
   my $obj = WTSI::NPG::iRODS::DataObject->new($irods, $remote_path);
 
-  $obj->clear_checksum;
-  ok(!$obj->has_checksum, 'Checksum removed');
   $publisher->publish_file($local_path, $remote_path) or fail;
-  ok($obj->has_checksum, 'Re-upload file to existing path with missing checksum');
+  isnt($obj->checksum, undef, 'Checksum replaced');
 
   is ($obj->checksum, $publisher->_get_md5($local_path), 'Checksum correct');
 }
