@@ -282,13 +282,14 @@ sub supersede_multivalue_avus {
   Description: Return a list of iRODS group names. The list might be empty or
                contain either one or multiple iRODS group names.
 
-               An empty list is returned if the concent has been withdrawn or
+               An empty list is returned if the consent has been withdrawn or
                for split-out xa-human data, for which the consent does not
                exist by definition, or for split-out human data that is
                associated with multiple studies.
 
-               Special study-related 'human' group ss_<STUDY_ID>_human is
-               returned for split-out human data associated with a single study.
+               Special study-related 'human' group obtained from ML Warehouse
+               (or ss_<STUDY_ID>_human if not set) is returned for split-out
+               human data associated with a single study.
 
                In all other cases if data is associated with a list of studies,
                a list of groups is returned, a group per study, the group name
@@ -326,9 +327,14 @@ sub expected_groups {
     @groups = map { $self->irods->make_group_name($_) }
               map { $_->{value} }
               @ss_study_avus;
-    if (@groups == 1 and $human_subset) {
+    if ($human_subset) {
       $self->info('Data belongs to human subset');
-      @groups = ($groups[0] . '_human'); # Reset the list
+      if (defined $self->human_contamination_groups &&
+        $self->human_contamination_groups != []) {
+        @groups = $self->human_contamination_groups;
+      }elsif (@groups == 1){
+        @groups = ($groups[0] . '_human'); # Reset the list
+      }
     }
   }
 
